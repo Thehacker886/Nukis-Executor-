@@ -1,0 +1,431 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local mouse = Players.LocalPlayer:GetMouse()
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Cria a interface do botão
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "RoundDraggableButtonGui"
+screenGui.Parent = playerGui
+
+-- Cria o botão redondo
+local button = Instance.new("TextButton")
+button.Name = "RoundDraggableButton"
+button.Size = UDim2.new(0, 80, 0, 80)
+button.Position = UDim2.new(0.8, -40, 0.8, -40)
+button.Text = "Open"
+button.TextScaled = true
+button.Font = Enum.Font.SourceSansBold
+button.TextColor3 = Color3.fromRGB(255, 255, 255)
+button.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+
+-- Cria corners arredondadas
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(1, 0)
+corner.Parent = button
+
+button.Parent = screenGui
+
+-- Variáveis para o arrasto
+local dragging = false
+local dragInput, dragStart, startPos
+
+-- Função para atualizar a posição durante o arrasto
+local function update(input)
+    local delta = input.Position - dragStart
+    button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+-- Conecta os eventos de input
+button.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = button.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+button.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+-- Função para criar o Nukis Executor com abas
+local function createNukisExecutor()
+    -- Verifica se a UI já existe para não criar duplicatas
+    if playerGui:FindFirstChild("NukisExecutor") then
+        playerGui:FindFirstChild("NukisExecutor"):Destroy()
+        return
+    end
+
+    -- UI principal
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "NukisExecutor"
+    ScreenGui.Parent = playerGui
+
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Size = UDim2.new(0, 600, 0, 400)
+    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -200)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    MainFrame.BorderSizePixel = 0
+    MainFrame.Active = true
+    MainFrame.Draggable = true
+    MainFrame.Name = "MainFrame"
+    MainFrame.Parent = ScreenGui
+
+    -- Cantos arredondados
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 10)
+    UICorner.Parent = MainFrame
+
+    -- Título
+    local Title = Instance.new("TextLabel")
+    Title.Size = UDim2.new(1, 0, 0, 40)
+    Title.BackgroundTransparency = 1
+    Title.Text = "Nukis Executor"
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.TextSize = 24
+    Title.Font = Enum.Font.GothamBold
+    Title.Name = "Title"
+    Title.Parent = MainFrame
+
+    -- Separador
+    local Line = Instance.new("Frame")
+    Line.Size = UDim2.new(1, -20, 0, 1)
+    Line.Position = UDim2.new(0, 10, 0, 40)
+    Line.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    Line.BorderSizePixel = 0
+    Line.Parent = MainFrame
+
+    -- Botão Close
+    local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Size = UDim2.new(0, 25, 0, 25)
+    CloseBtn.Position = UDim2.new(1, -35, 0, 7.5)
+    CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    CloseBtn.Text = "X"
+    CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseBtn.TextSize = 14
+    CloseBtn.Font = Enum.Font.GothamBold
+    CloseBtn.Name = "CloseBtn"
+    CloseBtn.Parent = MainFrame
+
+    local CloseUICorner = Instance.new("UICorner")
+    CloseUICorner.CornerRadius = UDim.new(0, 4)
+    CloseUICorner.Parent = CloseBtn
+
+    -- Container das abas laterais
+    local TabContainer = Instance.new("Frame")
+    TabContainer.Size = UDim2.new(0, 150, 1, -50)
+    TabContainer.Position = UDim2.new(0, 10, 0, 45)
+    TabContainer.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    TabContainer.BorderSizePixel = 0
+    TabContainer.Parent = MainFrame
+
+    local TabUICorner = Instance.new("UICorner")
+    TabUICorner.CornerRadius = UDim.new(0, 8)
+    TabUICorner.Parent = TabContainer
+
+    -- Container do conteúdo
+    local ContentContainer = Instance.new("Frame")
+    ContentContainer.Size = UDim2.new(0, 420, 1, -50)
+    ContentContainer.Position = UDim2.new(0, 170, 0, 45)
+    ContentContainer.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    ContentContainer.BorderSizePixel = 0
+    ContentContainer.Parent = MainFrame
+
+    local ContentUICorner = Instance.new("UICorner")
+    ContentUICorner.CornerRadius = UDim.new(0, 8)
+    ContentUICorner.Parent = ContentContainer
+
+    -- Sistema de abas
+    local tabs = {}
+    local currentTab = nil
+
+    -- Função para criar aba
+    local function createTab(name, icon, yPos)
+        local tabBtn = Instance.new("TextButton")
+        tabBtn.Size = UDim2.new(1, -10, 0, 40)
+        tabBtn.Position = UDim2.new(0, 5, 0, yPos)
+        tabBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        tabBtn.Text = "  " .. icon .. "  " .. name
+        tabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        tabBtn.TextSize = 14
+        tabBtn.Font = Enum.Font.Gotham
+        tabBtn.TextXAlignment = Enum.TextXAlignment.Left
+        tabBtn.Parent = TabContainer
+        
+        local tabUICorner = Instance.new("UICorner")
+        tabUICorner.CornerRadius = UDim.new(0, 6)
+        tabUICorner.Parent = tabBtn
+        
+        -- Container do conteúdo da aba
+        local content = Instance.new("Frame")
+        content.Size = UDim2.new(1, -10, 1, -10)
+        content.Position = UDim2.new(0, 5, 0, 5)
+        content.BackgroundTransparency = 1
+        content.Visible = false
+        content.Parent = ContentContainer
+        
+        tabs[name] = {
+            button = tabBtn,
+            content = content
+        }
+        
+        tabBtn.MouseButton1Click:Connect(function()
+            switchTab(name)
+        end)
+        
+        return content
+    end
+
+    -- Função para trocar de aba
+    local function switchTab(tabName)
+        -- Desativar aba atual
+        if currentTab then
+            tabs[currentTab].button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+            tabs[currentTab].button.TextColor3 = Color3.fromRGB(200, 200, 200)
+            tabs[currentTab].content.Visible = false
+        end
+        
+        -- Ativar nova aba
+        currentTab = tabName
+        tabs[tabName].button.BackgroundColor3 = Color3.fromRGB(70, 130, 200)
+        tabs[tabName].button.TextColor3 = Color3.fromRGB(255, 255, 255)
+        tabs[tabName].content.Visible = true
+    end
+
+    -- Criar abas
+    local playerContent = createTab("Player", "👤", 10)
+    local executorContent = createTab("Executor", "⚡", 60)
+
+    -- CONTEÚDO DA ABA PLAYER
+    local playerTitle = Instance.new("TextLabel")
+    playerTitle.Size = UDim2.new(1, 0, 0, 30)
+    playerTitle.BackgroundTransparency = 1
+    playerTitle.Text = "👤 Player Settings"
+    playerTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    playerTitle.TextSize = 18
+    playerTitle.Font = Enum.Font.GothamBold
+    playerTitle.TextXAlignment = Enum.TextXAlignment.Left
+    playerTitle.Parent = playerContent
+
+    -- Função para criar slider
+    local function createSlider(parent, name, minVal, maxVal, defaultVal, yPos, callback)
+        local sliderFrame = Instance.new("Frame")
+        sliderFrame.Size = UDim2.new(1, -20, 0, 60)
+        sliderFrame.Position = UDim2.new(0, 10, 0, yPos)
+        sliderFrame.BackgroundTransparency = 1
+        sliderFrame.Parent = parent
+        
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, 0, 0, 20)
+        label.BackgroundTransparency = 1
+        label.Text = name .. ": " .. defaultVal
+        label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        label.TextSize = 14
+        label.Font = Enum.Font.Gotham
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Parent = sliderFrame
+        
+        local sliderBg = Instance.new("Frame")
+        sliderBg.Size = UDim2.new(1, 0, 0, 8)
+        sliderBg.Position = UDim2.new(0, 0, 0, 25)
+        sliderBg.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        sliderBg.BorderSizePixel = 0
+        sliderBg.Parent = sliderFrame
+        
+        local sliderBgCorner = Instance.new("UICorner")
+        sliderBgCorner.CornerRadius = UDim.new(0, 4)
+        sliderBgCorner.Parent = sliderBg
+        
+        local sliderFill = Instance.new("Frame")
+        sliderFill.Size = UDim2.new(defaultVal/maxVal, 0, 1, 0)
+        sliderFill.BackgroundColor3 = Color3.fromRGB(70, 130, 200)
+        sliderFill.BorderSizePixel = 0
+        sliderFill.Parent = sliderBg
+        
+        local sliderFillCorner = Instance.new("UICorner")
+        sliderFillCorner.CornerRadius = UDim.new(0, 4)
+        sliderFillCorner.Parent = sliderFill
+        
+        local sliderButton = Instance.new("TextButton")
+        sliderButton.Size = UDim2.new(0, 16, 0, 16)
+        sliderButton.Position = UDim2.new(defaultVal/maxVal, -8, 0.5, -8)
+        sliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        sliderButton.Text = ""
+        sliderButton.BorderSizePixel = 0
+        sliderButton.Parent = sliderBg
+        
+        local sliderButtonCorner = Instance.new("UICorner")
+        sliderButtonCorner.CornerRadius = UDim.new(0.5, 0)
+        sliderButtonCorner.Parent = sliderButton
+        
+        local dragging = false
+        
+        sliderButton.MouseButton1Down:Connect(function()
+            dragging = true
+        end)
+        
+        mouse.Button1Up:Connect(function()
+            dragging = false
+        end)
+        
+        mouse.Move:Connect(function()
+            if dragging then
+                local relativeX = mouse.X - sliderBg.AbsolutePosition.X
+                local percentage = math.clamp(relativeX / sliderBg.AbsoluteSize.X, 0, 1)
+                local value = math.floor(minVal + (maxVal - minVal) * percentage)
+                
+                sliderButton.Position = UDim2.new(percentage, -8, 0.5, -8)
+                sliderFill.Size = UDim2.new(percentage, 0, 1, 0)
+                label.Text = name .. ": " .. value
+                
+                callback(value)
+            end
+        end)
+        
+        return sliderFrame
+    end
+
+    -- Slider de WalkSpeed
+    createSlider(playerContent, "WalkSpeed", 16, 200, 16, 40, function(value)
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.WalkSpeed = value
+        end
+    end)
+
+    -- Slider de JumpPower
+    createSlider(playerContent, "JumpPower", 50, 200, 50, 110, function(value)
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.JumpPower = value
+        end
+    end)
+
+    -- CONTEÚDO DA ABA EXECUTOR
+    local executorTitle = Instance.new("TextLabel")
+    executorTitle.Size = UDim2.new(1, 0, 0, 30)
+    executorTitle.BackgroundTransparency = 1
+    executorTitle.Text = "⚡ Script Executor"
+    executorTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    executorTitle.TextSize = 18
+    executorTitle.Font = Enum.Font.GothamBold
+    executorTitle.TextXAlignment = Enum.TextXAlignment.Left
+    executorTitle.Parent = executorContent
+
+    -- ScrollingFrame para o código
+    local ScrollFrame = Instance.new("ScrollingFrame")
+    ScrollFrame.Size = UDim2.new(1, -20, 0, 240)
+    ScrollFrame.Position = UDim2.new(0, 10, 0, 40)
+    ScrollFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    ScrollFrame.BorderSizePixel = 0
+    ScrollFrame.ScrollBarThickness = 6
+    ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+    ScrollFrame.Parent = executorContent
+
+    local ScrollUICorner = Instance.new("UICorner")
+    ScrollUICorner.CornerRadius = UDim.new(0, 8)
+    ScrollUICorner.Parent = ScrollFrame
+
+    -- TextBox para código
+    local CodeBox = Instance.new("TextBox")
+    CodeBox.Size = UDim2.new(1, -10, 1, 0)
+    CodeBox.Position = UDim2.new(0, 5, 0, 0)
+    CodeBox.BackgroundTransparency = 1
+    CodeBox.Text = ""
+    CodeBox.PlaceholderText = "-- Digite seu código Lua aqui\nprint('Hello World!')"
+    CodeBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CodeBox.TextSize = 14
+    CodeBox.Font = Enum.Font.Code
+    CodeBox.ClearTextOnFocus = false
+    CodeBox.MultiLine = true
+    CodeBox.TextXAlignment = Enum.TextXAlignment.Left
+    CodeBox.TextYAlignment = Enum.TextYAlignment.Top
+    CodeBox.AutomaticSize = Enum.AutomaticSize.Y
+    CodeBox.Parent = ScrollFrame
+
+    -- Botões do Executor
+    local ExecuteBtn = Instance.new("TextButton")
+    ExecuteBtn.Size = UDim2.new(0, 100, 0, 35)
+    ExecuteBtn.Position = UDim2.new(0, 10, 1, -45)
+    ExecuteBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 0)
+    ExecuteBtn.Text = "Execute"
+    ExecuteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ExecuteBtn.TextSize = 16
+    ExecuteBtn.Font = Enum.Font.GothamBold
+    ExecuteBtn.Parent = executorContent
+
+    local ExecuteUICorner = Instance.new("UICorner")
+    ExecuteUICorner.CornerRadius = UDim.new(0, 8)
+    ExecuteUICorner.Parent = ExecuteBtn
+
+    local ClearBtn = Instance.new("TextButton")
+    ClearBtn.Size = UDim2.new(0, 100, 0, 35)
+    ClearBtn.Position = UDim2.new(0, 120, 1, -45)
+    ClearBtn.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+    ClearBtn.Text = "Clear"
+    ClearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ClearBtn.TextSize = 16
+    ClearBtn.Font = Enum.Font.GothamBold
+    ClearBtn.Parent = executorContent
+
+    local ClearUICorner = Instance.new("UICorner")
+    ClearUICorner.CornerRadius = UDim.new(0, 8)
+    ClearUICorner.Parent = ClearBtn
+
+    -- Funcionalidades
+    ExecuteBtn.MouseButton1Click:Connect(function()
+        local code = CodeBox.Text
+        if code and code ~= "" then
+            local success, error = pcall(function()
+                loadstring(code)()
+            end)
+            if not success then
+                warn("Nukis Executor Error: " .. tostring(error))
+            end
+        end
+    end)
+
+    ClearBtn.MouseButton1Click:Connect(function()
+        CodeBox.Text = ""
+    end)
+
+    CloseBtn.MouseButton1Click:Connect(function()
+        ScreenGui:Destroy()
+    end)
+
+    -- Efeitos visuais
+    local function addHoverEffect(button, normalColor, hoverColor)
+        button.MouseEnter:Connect(function()
+            button.BackgroundColor3 = hoverColor
+        end)
+        
+        button.MouseLeave:Connect(function()
+            button.BackgroundColor3 = normalColor
+        end)
+    end
+
+    addHoverEffect(ExecuteBtn, Color3.fromRGB(0, 120, 0), Color3.fromRGB(0, 150, 0))
+    addHoverEffect(ClearBtn, Color3.fromRGB(120, 0, 0), Color3.fromRGB(150, 0, 0))
+    addHoverEffect(CloseBtn, Color3.fromRGB(200, 0, 0), Color3.fromRGB(220, 0, 0))
+
+    -- Inicializar primeira aba
+    switchTab("Player")
+end
+
+-- Conecta o clique do botão para abrir/fechar o executor
+button.MouseButton1Click:Connect(createNukisExecutor)
